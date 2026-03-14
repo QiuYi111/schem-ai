@@ -1,54 +1,326 @@
-# Schematic Agent Entry Skill
+---
+name: schematic
+description: Orchestrate the end-to-end schematic-agent workflow for initialized project repositories. Use when Codex needs to run or continue the phase-based process defined by this repository: read workflow state, load the active phase rule, pick the right agent role, create or update phase artifacts, invoke deterministic scripts, run review and checkpoint gates, and advance the project through phase0 to phase5 without replacing script-owned validation or state transitions.
+---
+# Schematic
 
-## Purpose
+Drive the initialized project repository through a phase-based schematic design workflow.
 
-This repository publishes a reusable skill, deterministic scripts, and a repository template for schematic-agent projects.
+Treat this skill as the top-level orchestrator. Make decisions, write artifacts, and route work. Leave deterministic operations to the repository scripts.
 
-The initialized user repository is the runtime workspace. This source repository is the package that installs that workspace shape.
+## Operating Model
 
-## Responsibilities
+Work in five layers and do not blur them:
 
-The skill is only responsible for:
+1. `Makefile` is the human-friendly entrypoint.
+2. `scripts/` performs deterministic operations such as bootstrap, init, status, indexing, validation, review state updates, checkpointing, transitions, and rendering.
+3. `state.yaml` and `project_index.yaml` are the workflow source of truth.
+4. `phases/*.md` defines what the current phase must accomplish.
+5. `agents/*.md` defines the role to use for the current task.
 
-1. Reading `state.yaml` inside the initialized project repository.
-2. Determining the current phase.
-3. Loading the matching rule from `phases/`.
-4. Loading the matching agent template from `agents/`.
-5. Producing or updating phase artifacts.
-6. Calling deterministic scripts for indexing, validation, review, checkpointing, and transitions.
+Do not manually simulate what a script already owns.
 
-The skill must not manually recreate project structure, fake state transitions, or replace script-based validation.
+## Hard Boundaries
 
-## Operating Loop
+Do:
 
-1. Run `python scripts/status.py` in the initialized project repository.
-2. Read the current phase document in `phases/`.
-3. Read the relevant agent template in `agents/`.
-4. Produce or update the required artifacts for the current phase.
-5. Run `python scripts/update_index.py`.
-6. Run `python scripts/validate.py`.
-7. Run `python scripts/review.py` to scaffold or refresh the review artifact.
-8. After manual review is complete, run `python scripts/review.py --approve`.
-9. Run `python scripts/checkpoint.py`.
-10. Advance with `python scripts/transition.py <next-phase>`.
+1. Read the current state before acting.
+2. Read only the current phase file and the agent file needed for the task.
+3. Produce or update the phase artifacts on disk.
+4. Call scripts at the required gates.
+5. Use review loops before advancing phases.
+6. Keep the repository auditable through index updates and checkpoints.
 
-## Phase Map
+Do not:
 
-- `phase0`: requirement clarification
-- `phase1`: architecture and implementation plan
-- `phase2`: part sourcing and datasheet collection
-- `phase3`: datasheet digestion and handbook generation
-- `phase4`: structured interconnect design
-- `phase5`: schematic rendering
+1. Recreate project structure by hand if init scripts should do it.
+2. Pretend validation passed without running `scripts/validate.py`.
+3. Pretend review is complete without running `scripts/review.py`.
+4. Edit `state.yaml` or `project_index.yaml` manually unless a script explicitly requires manual repair and the user has asked for that repair.
+5. Jump phases or fake a transition instead of using `scripts/transition.py`.
+6. Keep important reasoning only in chat when PRD requires it to be written to files.
 
-## Expected Inputs
+## Startup Routine
 
-- User request and follow-up clarifications
-- Current phase files
-- Existing project assets recorded in `project_index.yaml`
+At the start of work in an initialized project repository:
 
-## Expected Outputs
+1. Run `python scripts/status.py --project-root <repo>` or `make status`.
+2. Read `state.yaml` to confirm `phase`, `status`, `blocked`, `allow_transition`, `review_status`, and `pending_reviews`.
+3. Read the active phase file from `phases/`.
+4. Read the matching agent role from `agents/`.
+5. Read only the input artifacts relevant to the active phase.
+6. Decide whether the next action is:
+   - artifact production,
+   - artifact revision,
+   - review,
+   - approval after review,
+   - checkpoint,
+   - transition,
+   - or render.
 
-- Phase artifacts written to disk
-- Updated `state.yaml` and `project_index.yaml`
-- Review records and git checkpoints
+If the repository is not initialized, do not improvise the layout. Run `python scripts/init_project.py --target <path>` or `make init TARGET=<path>`.
+
+## Preferred Commands
+
+Prefer `make` when the target exists and the repository is being driven like a user project. Use direct Python script calls when you need explicit `--project-root` control.
+
+Available entrypoints:
+
+- `make bootstrap`
+- `make init TARGET=<path>`
+- `make status`
+- `make index`
+- `make validate`
+- `make review`
+- `make approve-review`
+- `make checkpoint`
+- `make phase0` through `make phase5`
+- `make render`
+
+Python equivalents exist in `scripts/`.
+
+## Script Contract
+
+Use scripts at these moments:
+
+1. `scripts/bootstrap.py`
+   Use to verify local tool availability before first-time setup.
+2. `scripts/init_project.py`
+   Use to create a new runtime repository. Do not hand-build the project tree instead.
+3. `scripts/status.py`
+   Use at the beginning of every meaningful work session and after major gates if state may have changed.
+4. `scripts/update_index.py`
+   Use immediately after creating, deleting, or materially changing tracked artifacts.
+5. `scripts/validate.py`
+   Use after artifact updates and before any review approval or phase transition.
+6. `scripts/review.py`
+   Use when a phase deliverable is ready for review. This scaffolds or refreshes the phase review file and updates review state.
+7. `scripts/review.py --approve`
+   Use only after the review artifact shows no unresolved blocking findings and the project is ready to move forward.
+8. `scripts/checkpoint.py`
+   Use after a validated, reviewed milestone when there are actual git changes to preserve.
+9. `scripts/transition.py <phase>`
+   Use to move exactly one phase forward. Use `--allow-rollback` only when a recorded change request justifies rollback.
+10. `scripts/render.py`
+    Use only in `phase5` after `design/interconnect.json` is ready.
+
+## Core Loop
+
+Follow this loop every time:
+
+1. Inspect state.
+2. Load the active phase rule.
+3. Load the role definition needed for the current work.
+4. Read the minimum required input artifacts.
+5. Produce or revise the required output artifacts.
+6. Run `scripts/update_index.py`.
+7. Run `scripts/validate.py`.
+8. Run `scripts/review.py`.
+9. Address review findings by updating artifacts, then rerun index and validate as needed.
+10. Run `scripts/review.py --approve` only when review is clean.
+11. Run `scripts/checkpoint.py`.
+12. Run `scripts/transition.py <next-phase>` when the current phase is complete and approved.
+
+Do not transition in the same breath as draft artifact creation. Treat review approval as a real gate.
+
+## Phase Routing
+
+Route work by `state.yaml.phase`:
+
+- `phase0`
+  Use `agents/clarifier.md`.
+  Convert user intent into explicit requirements, constraints, assumptions, and open questions.
+  Detect X-Y problems and restate the real goal before locking requirements.
+- `phase1`
+  Use `agents/architect.md`.
+  Turn phase0 outputs into a system design, interface matrix, and risk register.
+  Require review-oriented scrutiny before moving on.
+- `phase2`
+  Use `agents/sourcer.md`.
+  Research candidate parts, compare tradeoffs, choose approved parts, and curate datasheets.
+  Use parallel work only when it helps compare alternatives with isolated context.
+- `phase3`
+  Use `agents/sourcer.md` for datasheet digestion unless a better specialized role is added later.
+  Turn approved parts and datasheets into handbook guidance that is implementation-ready.
+- `phase4`
+  Use `agents/architect.md`.
+  Convert requirements and handbook constraints into `design/interconnect.json` and supporting notes.
+- `phase5`
+  Use `agents/architect.md` to prepare the design package, then call `scripts/render.py`.
+  Verify render inputs and log outputs.
+
+Use `agents/reviewer.md` whenever a phase output is ready for semantic review or when a nontrivial inconsistency appears.
+
+## Task Allocation
+
+Assign work by role, not by convenience:
+
+1. `clarifier`
+   Own requirement extraction, contradiction detection, X-Y problem handling, assumptions, and open questions.
+2. `architect`
+   Own solution decomposition, interface definition, interconnect logic, and design-level risk analysis.
+3. `sourcer`
+   Own candidate research, selection criteria, approved part decisions, datasheet curation, and datasheet-derived constraints.
+4. `reviewer`
+   Own semantic review, missing-risk detection, inconsistency detection, and go or no-go judgment for delivery readiness.
+
+## Subagent Protocol
+
+Use subagents deliberately. They are not a default replacement for thinking; they are a tool for isolation, adversarial review, and parallel comparison.
+
+Start a subagent when one of these conditions is true:
+
+1. A phase requires independent review before delivery.
+2. Two or more candidate solutions or parts must be compared in parallel.
+3. You need a clean-context pass to detect hidden assumptions or reasoning contamination.
+4. The active task is large enough that decomposition improves quality without weakening traceability.
+
+Do not start a subagent when:
+
+1. The task is a simple deterministic script invocation.
+2. The needed work is a small edit in the current artifact and no independent judgment is required.
+3. You cannot provide the subagent with a tight task-local context package.
+
+When launching a subagent, provide only:
+
+1. The current phase.
+2. The exact task to perform.
+3. The required input files for that task.
+4. The expected output artifact or review format.
+5. Any hard constraints that must not be violated.
+
+Do not provide:
+
+1. The full project conversation history.
+2. Irrelevant artifacts from other phases.
+3. Your preferred answer when asking for review.
+4. Hidden conclusions that would bias an independent check.
+
+Require every subagent to return:
+
+1. A concise decision or recommendation.
+2. The evidence path, citing the files it used.
+3. Any risks, gaps, or contradictions found.
+4. The exact artifact changes or review findings it proposes.
+
+The parent agent remains responsible for:
+
+1. Deciding whether a subagent is needed.
+2. Framing the task and context package.
+3. Evaluating the returned result.
+4. Merging useful findings into project artifacts.
+5. Running index, validate, review, checkpoint, and transition scripts.
+
+When using multiple agents or subagents:
+
+1. Share only the current task, required input artifacts, and expected output artifacts.
+2. Do not share the full project conversation history.
+3. Do not leak your preferred answer into review prompts.
+4. Ask independent reviewers to judge artifacts, not to agree with your plan.
+5. Merge findings back into the repository artifacts explicitly.
+
+## Subagent Routing By Phase
+
+Use subagents in these patterns:
+
+1. `phase0`
+   Optional.
+   Use a reviewer-style subagent only when requirements are ambiguous, contradictory, or likely affected by X-Y problem framing.
+
+2. `phase1`
+   Required before delivery.
+   Start at least one clean-context review subagent to challenge the architecture, interface boundaries, and risk register.
+
+3. `phase2`
+   Strongly recommended.
+   Use parallel sourcer subagents to evaluate different candidate parts or sourcing directions independently, then reconcile results in the main thread.
+
+4. `phase3`
+   Optional.
+   Use a review subagent when handbook extraction from datasheets is complex or safety-critical and needs a second pass for omissions.
+
+5. `phase4`
+   Required before approval when the interconnect design is nontrivial.
+   Use a review subagent to look for missing nets, interface mismatches, and contradictions between handbook constraints and JSON output.
+
+6. `phase5`
+   Optional before render, useful after render failure.
+   Use a subagent to inspect render readiness or diagnose mismatch between `design/interconnect.json`, design notes, and render outputs.
+
+## Review Discipline
+
+Treat review as a first-class phase gate.
+
+For every phase:
+
+1. Finish draft artifacts.
+2. Update the index.
+3. Validate structure and required files.
+4. Generate or refresh the review artifact with `scripts/review.py`.
+5. Use the reviewer role to inspect semantic quality:
+   - missing requirements,
+   - weak assumptions,
+   - design contradictions,
+   - sourcing gaps,
+   - handbook omissions,
+   - JSON inconsistency,
+   - render readiness.
+6. Before approval, run one or more clean-context review subagents when the phase calls for independent review.
+7. Write findings into `review/<phase>_review.md`.
+8. Revise artifacts until blocking findings are cleared.
+9. Approve review with `scripts/review.py --approve`.
+
+Do not approve review while `pending_reviews` is non-empty or while the review document still contains unresolved blockers.
+
+## Transition Rules
+
+Advance a phase only when all of the following are true:
+
+1. Required phase artifacts exist and are non-empty.
+2. `scripts/update_index.py` has been run after the latest artifact changes.
+3. `scripts/validate.py` passes.
+4. Review has been scaffolded, completed, and approved.
+5. `state.yaml.allow_transition` is true.
+
+If a phase needs to be revisited after completion, create or update a change request record under `review/change_requests/` before using rollback.
+
+## Artifact Policy
+
+Persist important outputs to disk immediately. At minimum, maintain:
+
+- `spec/` for clarified requirements
+- `architecture/` for solution design
+- `sourcing/` for candidate parts, approved parts, notes, and datasheets
+- `handbook/` for datasheet-derived design guidance
+- `design/` for interconnect JSON and notes
+- `render/` for rendered outputs and logs
+- `review/` for review records and change requests
+
+If a result matters to later phases, it must exist as a file and be indexed.
+
+## Failure Handling
+
+Stop and surface the issue instead of improvising when:
+
+1. `state.yaml` contains an unknown phase.
+2. Validation fails and the cause is unclear.
+3. Review reveals a blocker that changes upstream assumptions.
+4. A rollback is needed but no change request exists.
+5. Required inputs for the active phase are missing.
+6. Render input is incomplete or inconsistent with design notes.
+
+When blocked:
+
+1. Record the blocker in the appropriate artifact or review file.
+2. Do not force a transition.
+3. Ask for the missing user decision only if it cannot be resolved from repository context.
+
+## Writing Style For This Skill
+
+When acting under this skill:
+
+1. Be concise in chat and detailed in files.
+2. Separate confirmed facts, assumptions, open questions, and decisions.
+3. Prefer structured artifacts over freeform notes.
+4. Preserve traceability from each phase output to its inputs.
+5. Keep the context window small by loading only the active phase and relevant artifacts.
