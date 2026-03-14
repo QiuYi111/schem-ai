@@ -1,4 +1,4 @@
----
+﻿---
 name: schematic
 description: Orchestrate the end-to-end schematic-agent workflow for initialized project repositories. Use when Codex needs to run or continue the phase-based process defined by this repository: read workflow state, load the active phase rule, pick the right agent role, create or update phase artifacts, invoke deterministic scripts, run review and checkpoint gates, and advance the project through phase0 to phase5 without replacing script-owned validation or state transitions.
 ---
@@ -84,7 +84,7 @@ Python equivalents exist in `scripts/`.
 Use scripts at these moments:
 
 1. `scripts/bootstrap.py`
-   Use to verify local tool availability before first-time setup.
+   Use to verify the environment and install project-local dependencies. In this repository it installs `lightpanda` and `pdf-to-markdown` into `.tools/`.
 2. `scripts/init_project.py`
    Use to create a new runtime repository. Do not hand-build the project tree instead.
 3. `scripts/status.py`
@@ -103,6 +103,17 @@ Use scripts at these moments:
    Use to move exactly one phase forward. Use `--allow-rollback` only when a recorded change request justifies rollback.
 10. `scripts/render.py`
     Use only in `phase5` after `design/interconnect.json` is ready.
+
+## Tool References
+
+When browser execution is needed in this source repository:
+
+1. Read `tools/lightpanda/README.md` before first use.
+2. Prefer `./.tools/bin/lightpanda fetch --dump <url>` for fast one-shot page execution and DOM capture.
+3. Use `./.tools/bin/lightpanda serve --host 127.0.0.1 --port 9222` only when a CDP endpoint is needed.
+4. Set `LIGHTPANDA_DISABLE_TELEMETRY=true` for local agent workflows.
+
+Treat `.tools/` as a local dependency directory, not as a project artifact to commit.
 
 ## Core Loop
 

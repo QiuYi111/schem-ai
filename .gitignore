@@ -1,4 +1,5 @@
-﻿.state-cache/
+.state-cache/
+.tools/
 __pycache__/
 *.pyc
 *.pyo
