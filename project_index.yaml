@@ -6,6 +6,7 @@
     "handbook/README.md",
     "review/README.md",
     "review/change_requests/README.md",
+    "review/phase0_review.md",
     "spec/assumptions.md",
     "spec/constraints.md",
     "spec/open_questions.md",
@@ -23,5 +24,5 @@
     "index": "project_index.yaml",
     "skill": "SKILL.md"
   },
-  "last_updated": "2026-03-14T15:30:05+00:00"
+  "last_updated": "2026-03-14T15:31:38+00:00"
 }

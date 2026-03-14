@@ -3,8 +3,6 @@
   "status": "not_started",
   "blocked": false,
   "allow_transition": true,
-  "pending_reviews": [
-    "phase0_review.md"
-  ],
-  "last_updated": "2026-03-14T15:30:18+00:00"
+  "pending_reviews": [],
+  "last_updated": "2026-03-14T15:31:09+00:00"
 }
