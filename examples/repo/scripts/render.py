@@ -4,7 +4,7 @@ import argparse
 import json
 import sys
 
-from common import resolve_project_root, utc_now
+from common import resolve_project_root, run_hook_group, utc_now
 
 
 def main() -> int:
@@ -14,11 +14,23 @@ def main() -> int:
 
     project_root = resolve_project_root(args.project_root)
     design_path = project_root / "design" / "interconnect.json"
+    out_dir = project_root / "render" / "schematic_output"
+
+    hook_result = run_hook_group(
+        project_root,
+        "pre-render",
+        {
+            "HOOK_RENDER_INPUT": str(design_path),
+            "HOOK_RENDER_OUTPUT_DIR": str(out_dir),
+        },
+    )
+    if hook_result != 0:
+        return hook_result
+
     if not design_path.exists():
         print(f"Missing design input: {design_path}")
         return 1
 
-    out_dir = project_root / "render" / "schematic_output"
     out_dir.mkdir(parents=True, exist_ok=True)
     placeholder = out_dir / "placeholder_schematic.txt"
     payload = json.loads(design_path.read_text(encoding="utf-8-sig"))
@@ -43,6 +55,19 @@ def main() -> int:
         ),
         encoding="utf-8",
     )
+
+    hook_result = run_hook_group(
+        project_root,
+        "post-render",
+        {
+            "HOOK_RENDER_INPUT": str(design_path),
+            "HOOK_RENDER_OUTPUT_DIR": str(out_dir),
+            "HOOK_RENDER_LOG": str(log_path),
+        },
+    )
+    if hook_result != 0:
+        return hook_result
+
     print(f"Rendered placeholder output at {placeholder}")
     return 0
 

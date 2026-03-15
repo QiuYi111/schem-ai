@@ -9,8 +9,8 @@ from pathlib import Path
 from common import PACKAGE_ROOT, default_index, default_state, write_data
 
 TEMPLATE_ROOT = PACKAGE_ROOT / "examples" / "repo"
-COPY_ROOT_FILES = [".gitignore", "Makefile"]
-COPY_DIRS = ["hooks"]
+COPY_ROOT_FILES = [".gitignore", "Makefile", "SKILL.md"]
+COPY_DIRS = ["hooks", "agents", "phases"]
 SKIP_NAMES = {"__pycache__", ".git"}
 SKIP_SUFFIXES = {".pyc", ".pyo", ".pyd"}
 

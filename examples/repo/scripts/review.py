@@ -4,7 +4,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from common import read_data, resolve_project_root, state_path, utc_now, write_data
+from common import read_data, resolve_project_root, run_hook_group, state_path, utc_now, write_data
 
 
 def ensure_review_file(review_path: Path, phase: str) -> None:
@@ -48,6 +48,14 @@ def main() -> int:
 
     pending = state.get("pending_reviews", [])
     if args.approve:
+        hook_result = run_hook_group(
+            project_root,
+            "pre-review-approve",
+            {"HOOK_REVIEW_PHASE": phase, "HOOK_REVIEW_FILE": review_path.name},
+        )
+        if hook_result != 0:
+            return hook_result
+
         pending = [item for item in pending if item != review_path.name]
         state["pending_reviews"] = pending
         state["review_status"] = "approved"
@@ -55,8 +63,25 @@ def main() -> int:
         state["status"] = "ready_to_transition"
         state["last_updated"] = utc_now()
         write_data(state_file, state)
+
+        hook_result = run_hook_group(
+            project_root,
+            "post-review-approve",
+            {"HOOK_REVIEW_PHASE": phase, "HOOK_REVIEW_FILE": review_path.name},
+        )
+        if hook_result != 0:
+            return hook_result
+
         print(f"Approved review for {phase}: {review_path}")
         return 0
+
+    hook_result = run_hook_group(
+        project_root,
+        "pre-review",
+        {"HOOK_REVIEW_PHASE": phase, "HOOK_REVIEW_FILE": review_path.name},
+    )
+    if hook_result != 0:
+        return hook_result
 
     if review_path.name not in pending:
         pending.append(review_path.name)
@@ -66,6 +91,15 @@ def main() -> int:
     state["status"] = "review_pending"
     state["last_updated"] = utc_now()
     write_data(state_file, state)
+
+    hook_result = run_hook_group(
+        project_root,
+        "post-review",
+        {"HOOK_REVIEW_PHASE": phase, "HOOK_REVIEW_FILE": review_path.name},
+    )
+    if hook_result != 0:
+        return hook_result
+
     print(f"Review scaffold ready at {review_path}")
     return 0
 

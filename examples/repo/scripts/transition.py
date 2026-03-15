@@ -5,7 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from common import PHASES, read_data, resolve_project_root, state_path, utc_now, write_data
+from common import PHASES, read_data, resolve_project_root, run_hook_group, state_path, utc_now, write_data
 
 
 def main() -> int:
@@ -43,6 +43,18 @@ def main() -> int:
         print(f"Illegal transition: cannot jump from {current} to {target}")
         return 1
 
+    hook_result = run_hook_group(
+        project_root,
+        "pre-transition",
+        {
+            "HOOK_CURRENT_PHASE": current,
+            "HOOK_TARGET_PHASE": target,
+            "HOOK_ALLOW_ROLLBACK": "1" if args.allow_rollback else "0",
+        },
+    )
+    if hook_result != 0:
+        return hook_result
+
     if target_index > current_index:
         validate_script = Path(__file__).with_name("validate.py")
         result = subprocess.run(
@@ -67,6 +79,19 @@ def main() -> int:
     state["pending_reviews"] = []
     state["last_updated"] = utc_now()
     write_data(state_file, state)
+
+    hook_result = run_hook_group(
+        project_root,
+        "post-transition",
+        {
+            "HOOK_CURRENT_PHASE": current,
+            "HOOK_TARGET_PHASE": target,
+            "HOOK_ALLOW_ROLLBACK": "1" if args.allow_rollback else "0",
+        },
+    )
+    if hook_result != 0:
+        return hook_result
+
     print(f"Transitioned from {current} to {target}")
     return 0
 

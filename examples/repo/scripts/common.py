@@ -2,6 +2,9 @@
 
 import copy
 import json
+import os
+import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -104,6 +107,10 @@ def index_path(project_root: Path) -> Path:
     return project_root / "project_index.yaml"
 
 
+def hooks_path(project_root: Path) -> Path:
+    return project_root / "hooks"
+
+
 def default_state() -> dict[str, Any]:
     payload = copy.deepcopy(DEFAULT_STATE)
     payload["last_updated"] = utc_now()
@@ -114,3 +121,39 @@ def default_index() -> dict[str, Any]:
     payload = copy.deepcopy(DEFAULT_INDEX)
     payload["last_updated"] = utc_now()
     return payload
+
+
+def run_hook_group(project_root: Path, hook_group: str, extra_env: dict[str, str] | None = None) -> int:
+    hook_root = hooks_path(project_root)
+    if not hook_root.exists():
+        return 0
+
+    hook_files = sorted(path for path in hook_root.iterdir() if path.is_file() and path.name.startswith(hook_group))
+    if not hook_files:
+        return 0
+
+    env = os.environ.copy()
+    env["PROJECT_ROOT"] = str(project_root)
+    env["HOOK_GROUP"] = hook_group
+    if extra_env:
+        env.update(extra_env)
+
+    for hook in hook_files:
+        if hook.suffix == ".py":
+            cmd = [sys.executable, str(hook), "--project-root", str(project_root)]
+        elif hook.suffix in {".sh", ".bash"}:
+            cmd = [str(hook), "--project-root", str(project_root)]
+        else:
+            continue
+
+        print(f"Running hook {hook.name}")
+        result = subprocess.run(cmd, cwd=project_root, env=env, capture_output=True, text=True, check=False)
+        if result.stdout.strip():
+            print(result.stdout.strip())
+        if result.stderr.strip():
+            print(result.stderr.strip())
+        if result.returncode != 0:
+            print(f"Hook failed: {hook.name}")
+            return result.returncode
+
+    return 0
