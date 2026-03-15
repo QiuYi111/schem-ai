@@ -1,0 +1,34 @@
+﻿{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "phase",
+    "status",
+    "blocked",
+    "allow_transition",
+    "review_status",
+    "pending_reviews",
+    "last_completed_phase",
+    "last_updated"
+  ],
+  "properties": {
+    "phase": {
+      "type": "string",
+      "enum": ["phase0", "phase1", "phase2", "phase3", "phase4", "phase5"]
+    },
+    "status": {"type": "string", "minLength": 1},
+    "blocked": {"type": "boolean"},
+    "allow_transition": {"type": "boolean"},
+    "review_status": {"type": "string", "minLength": 1},
+    "pending_reviews": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "last_completed_phase": {
+      "type": ["string", "null"],
+      "enum": ["phase0", "phase1", "phase2", "phase3", "phase4", "phase5", null]
+    },
+    "last_updated": {"type": "string", "minLength": 1}
+  }
+}

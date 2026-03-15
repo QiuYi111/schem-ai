@@ -1,3 +1,0 @@
-Render placeholder
-Generated from: interconnect.json
-Top-level keys: components, constraints, nets, project

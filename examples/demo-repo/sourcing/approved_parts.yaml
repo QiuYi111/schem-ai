@@ -1,0 +1,23 @@
+﻿approved_parts:
+- part_number: STM32G030F6P6
+  manufacturer: STMicroelectronics
+  role: microcontroller
+  source: sourcing/selection_notes.md#microcontroller-decision
+  rationale: Integrated ADC and UART satisfy the demo control-plane needs with low BOM count.
+  confidence: 0.79
+  datasheets:
+  - sourcing/datasheets/stm32g030.pdf
+  unresolved_items:
+  - Confirm final flash margin after firmware sizing.
+- part_number: AP2112K-3.3
+  manufacturer: Diodes Inc.
+  role: 3v3 regulator
+  source: sourcing/selection_notes.md#regulator-decision
+  rationale: Supports the expected load with a simple external capacitor network.
+  confidence: 0.72
+  datasheets:
+  - sourcing/datasheets/ap2112k.pdf
+  unresolved_items:
+  - Recheck thermal margin if input voltage remains at 12V.
+unresolved_items:
+- ESD protection for external interfaces is still open.

@@ -1,0 +1,4 @@
+﻿candidate_id,part_number,manufacturer,role,status,source,rationale,confidence,unresolved_items
+mcu-a,STM32G030F6P6,STMicroelectronics,microcontroller,approved,sourcing/selection_notes.md#microcontroller-decision,Integrated ADC and UART keep the design simple,0.79,Confirm final flash margin
+mcu-b,ATtiny1626,Microchip,microcontroller,rejected,sourcing/selection_notes.md#microcontroller-decision,Would require tighter peripheral tradeoffs for ADC and debug,0.58,ADC throughput margin unclear
+reg-a,AP2112K-3.3,Diodes Inc.,3v3 regulator,approved,sourcing/selection_notes.md#regulator-decision,Simple regulator for demo load budget,0.72,Validate thermal rise at 12V input

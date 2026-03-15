@@ -1,9 +1,0 @@
-.state-cache/
-.tools/
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.pytest_cache/
-.DS_Store
-Thumbs.db

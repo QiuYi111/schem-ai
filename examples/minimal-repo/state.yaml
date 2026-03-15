@@ -1,0 +1,8 @@
+﻿phase: phase0
+status: not_started
+blocked: false
+allow_transition: false
+review_status: not_started
+pending_reviews: []
+last_completed_phase: null
+last_updated: '2026-03-15T00:00:00+00:00'

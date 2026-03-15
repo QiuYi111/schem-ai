@@ -1,0 +1,44 @@
+﻿{
+  "project": "demo-controller-board",
+  "modules": [
+    {"id": "power", "name": "Power Input"},
+    {"id": "mcu", "name": "Microcontroller"},
+    {"id": "io", "name": "Status and Maintenance IO"}
+  ],
+  "nets": [
+    {"name": "VIN_12V", "source": "J1.1", "destinations": ["U2.IN"]},
+    {"name": "V3P3", "source": "U2.OUT", "destinations": ["U1.VDD", "J2.1"]},
+    {"name": "SENSOR_IN", "source": "J3.1", "destinations": ["U1.PA0"]}
+  ],
+  "components": [
+    {"ref": "U1", "part_number": "STM32G030F6P6", "role": "microcontroller"},
+    {"ref": "U2", "part_number": "AP2112K-3.3", "role": "regulator"},
+    {"ref": "D1", "part_number": "generic-led", "role": "status_led"}
+  ],
+  "constraints": [
+    {"name": "adc_voltage", "value": "0-3.0V max"},
+    {"name": "uart_levels", "value": "3.3V TTL"}
+  ],
+  "assumptions": [
+    "Sensor source impedance remains within the MCU ADC acquisition budget.",
+    "Demo board current stays below the regulator thermal comfort zone."
+  ],
+  "evidence": [
+    {
+      "source": "architecture/interface_matrix.md",
+      "rationale": "Defines the mandatory power, ADC, LED, and UART relationships.",
+      "confidence": 0.82,
+      "unresolved_items": ["Protection devices are not fully specified."]
+    },
+    {
+      "source": "handbook/README.md",
+      "rationale": "Captures regulator stability and ADC domain constraints that shape net choices.",
+      "confidence": 0.77,
+      "unresolved_items": ["Capacitor derating still needs confirmation."]
+    }
+  ],
+  "unresolved_items": [
+    "Interface ESD strategy remains open.",
+    "Reverse-polarity protection is not yet represented as a concrete component."
+  ]
+}

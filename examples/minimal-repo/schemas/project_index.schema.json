@@ -1,0 +1,29 @@
+﻿{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "documents",
+    "design_files",
+    "approved_parts",
+    "datasheets",
+    "current_artifacts",
+    "last_updated"
+  ],
+  "properties": {
+    "documents": {"type": "array", "items": {"type": "string"}},
+    "design_files": {"type": "array", "items": {"type": "string"}},
+    "approved_parts": {"type": "array", "items": {"type": "string"}},
+    "datasheets": {"type": "array", "items": {"type": "string"}},
+    "current_artifacts": {
+      "type": "object",
+      "required": ["state", "index", "skill"],
+      "properties": {
+        "state": {"type": "string"},
+        "index": {"type": "string"},
+        "skill": {"type": "string"}
+      }
+    },
+    "last_updated": {"type": "string", "minLength": 1}
+  }
+}

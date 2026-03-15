@@ -1,0 +1,3 @@
+﻿Render placeholder
+Generated from: interconnect.json
+Top-level keys: project, modules, nets, components, constraints, assumptions, evidence, unresolved_items

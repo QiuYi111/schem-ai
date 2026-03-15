@@ -1,5 +1,5 @@
-PYTHON ?= python
-PROJECT_ROOT ?= $(if $(wildcard examples/repo/state.yaml),examples/repo,.)
+﻿PYTHON ?= python
+PROJECT_ROOT ?= examples/minimal-repo
 TARGET ?= .
 
 .PHONY: bootstrap init status validate review approve-review checkpoint index phase0 phase1 phase2 phase3 phase4 phase5 render
