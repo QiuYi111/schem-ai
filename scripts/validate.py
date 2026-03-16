@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import argparse
 import json
@@ -108,6 +108,34 @@ def main() -> int:
 
     if state.get("review_status") == "approved" and state.get("pending_reviews"):
         failures.append("State is inconsistent: review_status is approved but pending_reviews is not empty.")
+
+    # Datasheet Gating
+    phase_idx = PHASES.index(phase) if phase in PHASES else -1
+    phase2_idx = PHASES.index("phase2")
+    
+    approved_parts = index.get("approved_parts", {}) # Usually in index or separate file
+    # Check if we have approved parts in the sourcing artifact
+    approved_parts_file = project_root / "sourcing" / "approved_parts.yaml"
+    
+    if phase_idx >= phase2_idx:
+        has_approved_parts = False
+        if approved_parts_file.exists():
+            parts_data = read_data(approved_parts_file)
+            if parts_data and isinstance(parts_data, dict) and parts_data.get("parts"):
+                has_approved_parts = True
+        
+        if has_approved_parts:
+            datasheet_dir = project_root / "sourcing" / "datasheets"
+            datasheets = index.get("datasheets", [])
+            
+            if not datasheets and not (datasheet_dir.exists() and any(datasheet_dir.iterdir())):
+                failures.append("Datasheet gating failure: Approved parts exist but no datasheets found in sourcing/datasheets/ or project index.")
+            
+            # Check for empty datasheets
+            if datasheet_dir.exists():
+                for ds in datasheet_dir.glob("*.pdf"):
+                    if ds.stat().st_size == 0:
+                        failures.append(f"Datasheet is empty: {ds.name}")
 
     for category in ["documents", "design_files", "datasheets"]:
         for rel in index.get(category, []):
