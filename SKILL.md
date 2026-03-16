@@ -170,38 +170,33 @@ Route work by `state.yaml.phase`:
   Convert user intent into explicit requirements, constraints, assumptions, and open questions.
   Detect X-Y problems and restate the real goal before locking requirements.
   Use `agents/reviewer.md` when an independent requirement-quality check is needed before approval.
-
 - `phase1`
   Main agent stays in orchestration mode.
-  Load `phases/phase1.md` and invoke `agents/architect.md` as the primary worker.
+  Load `phases/phase1.md` and invoke `architect` as the primary worker.
   Turn phase0 outputs into a system design, interface matrix, and risk register.
-  `agents/reviewer.md` is a required approval-gate role in this phase, not an optional helper.
-
+  `reviewer.md` is a required approval-gate role in this phase, not an optional helper.
 - `phase2`
   Main agent stays in orchestration mode.
-  Load `phases/phase2.md` and invoke `agents/sourcer.md` as the primary worker.
+  Load `phases/phase2.md` and invoke `sourcer` as the primary worker.
   Research candidate parts, compare tradeoffs, choose approved parts, and curate datasheets.
-  Use `agents/reviewer.md` to challenge sourcing rationale before approval.
-
+  Use `reviewer` to challenge sourcing rationale before approval.
 - `phase3`
   Main agent stays in orchestration mode.
   Load `phases/phase3.md` and invoke the best available sourcing or handbook-focused role.
   Turn approved parts and datasheets into handbook guidance that is implementation-ready.
-  Use `agents/reviewer.md` when handbook quality or omission risk is material.
-
+  Use `reviewer`when handbook quality or omission risk is material.
 - `phase4`
   Main agent stays in orchestration mode.
   Load `phases/phase4.md` and invoke `agents/architect.md` as the primary design worker.
   Convert requirements, architecture, and handbook constraints into `design/interconnect.json` and supporting notes.
   `agents/reviewer.md` is a required approval-gate role in this phase and must independently attack the final design before approval.
-
 - `phase5`
   Main agent stays in orchestration mode.
   Load `phases/phase5.md` and invoke the appropriate design-preparation role before calling `scripts/render.py`.
   Verify render inputs and log outputs.
-  Use `agents/reviewer.md` to judge render readiness and output traceability before approval when needed.
+  Use `reviewer` to judge render readiness and output traceability before approval when needed.
 
-Use `agents/reviewer.md` as the system's approval-gate reviewer whenever a phase deliverable needs semantic signoff.
+Use `reviewer` as the system's approval-gate reviewer whenever a phase deliverable needs semantic signoff.
 
 ## Task Allocation
 
@@ -215,8 +210,6 @@ Assign work by role, not by convenience:
    Own candidate research, selection criteria, approved part decisions, datasheet curation, and datasheet-derived constraints.
 4. `reviewer`
    Own semantic review, missing-risk detection, inconsistency detection, and go or no-go approval-gate judgment for delivery readiness.
-
-## Reviewer Principle
 
 Treat the reviewer as an approval-gate role, not as a cosmetic assistant.
 
@@ -293,23 +286,18 @@ Use subagents in these patterns:
 1. `phase0`
    Optional.
    Use a reviewer-style subagent only when requirements are ambiguous, contradictory, or likely affected by X-Y problem framing.
-
 2. `phase1`
    Required before delivery.
    Start at least one clean-context review subagent to challenge the architecture, interface boundaries, and risk register.
-
 3. `phase2`
    Strongly recommended.
    Use parallel sourcer subagents to evaluate different candidate parts or sourcing directions independently, then reconcile results in the main thread.
-
 4. `phase3`
    Optional.
    Use a review subagent when handbook extraction from datasheets is complex or safety-critical and needs a second pass for omissions.
-
 5. `phase4`
    Required before approval.
    Use `agents/reviewer.md` or a reviewer-style clean-context subagent to look for missing nets, interface mismatches, and contradictions between architecture, handbook constraints, and final interconnect output.
-
 6. `phase5`
    Optional before render, useful after render failure.
    Use a subagent to inspect render readiness or diagnose mismatch between `design/interconnect.json`, design notes, and render outputs.
@@ -357,7 +345,6 @@ If a phase needs to be revisited after completion, create or update a change req
 Persist important outputs to disk immediately. At minimum, maintain:
 
 - `schemas/` for state and artifact contracts
-
 - `spec/` for clarified requirements
 - `architecture/` for solution design
 - `sourcing/` for candidate parts, approved parts, notes, and datasheets
