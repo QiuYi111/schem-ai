@@ -17,7 +17,7 @@ Work in five layers and do not blur them:
 3. `state.yaml` and `project_index.yaml` are the workflow source of truth.
 4. `schemas/` defines the machine-checked contracts for state and core artifacts.
 5. `phases/*.md` defines what the current phase must accomplish.
-6. `agents/*.md` defines the role to use for the current task.
+6. `agents/*.md` defines the roles of subagents
 
 Do not manually simulate what a script already owns.
 
@@ -34,13 +34,13 @@ The main agent should:
 5. Keep the conversation, repository artifacts, and workflow state aligned
 6. Run the script-owned gates such as index, validate, review, checkpoint, and transition
 
-Do not let the main agent drift into doing every task itself when a phase-specific agent exists.
+Do not let the main agent drift into doing every task itself when a phase-specific subagent exists.
 
 The intended pattern is:
 
 1. `SKILL.md` teaches the overall workflow and orchestration rules
 2. `phases/<phase>.md` teaches what the active phase must accomplish
-3. `agents/<role>.md` teaches the specialized role how to perform the core task
+3. Use Subagent to finish specific tasks.
 4. The main agent coordinates these layers and remains responsible for final synthesis and workflow control
 
 ## Hard Boundaries
@@ -67,11 +67,11 @@ Do not:
 ## Startup Routine
 
 At the start of work in an initialized project repository:
-
+0 config repo and python env using uv or exsting python.
 1. Run `python scripts/status.py --project-root <repo>` or `make status`.
 2. Read `state.yaml` to confirm `phase`, `status`, `blocked`, `allow_transition`, `review_status`, and `pending_reviews`.
 3. Read the active phase file from `phases/`.
-4. Read the matching agent role from `agents/`.
+4. list subagents.
 5. Read only the input artifacts relevant to the active phase.
 6. Decide whether the next action is:
    - artifact production,
@@ -169,17 +169,17 @@ Route work by `state.yaml.phase`:
   Load `phases/phase0.md` and invoke `agents/clarifier.md` as the primary worker.
   Convert user intent into explicit requirements, constraints, assumptions, and open questions.
   Detect X-Y problems and restate the real goal before locking requirements.
-  Use `agents/reviewer.md` when an independent requirement-quality check is needed before approval.
+  Use subagent `reviewer` when an independent requirement-quality check is needed before approval.
 - `phase1`
   Main agent stays in orchestration mode.
-  Load `phases/phase1.md` and invoke `architect` as the primary worker.
+  Load `phases/phase1.md` and Use subagent `architect` as the primary worker.
   Turn phase0 outputs into a system design, interface matrix, and risk register.
-  `reviewer.md` is a required approval-gate role in this phase, not an optional helper.
-- `phase2`
+  Use subagent `reviewer` as a required approval-gate role in this phase, not an optional helper.
+   - `phase2`
   Main agent stays in orchestration mode.
-  Load `phases/phase2.md` and invoke `sourcer` as the primary worker.
+  Load `phases/phase2.md` and Use subagent `sourcer` as the primary worker.
   Research candidate parts, compare tradeoffs, choose approved parts, and curate datasheets.
-  Use `reviewer` to challenge sourcing rationale before approval.
+  Use subagent `reviewer` to challenge sourcing rationale before approval.
 - `phase3`
   Main agent stays in orchestration mode.
   Load `phases/phase3.md` and invoke the best available sourcing or handbook-focused role.
@@ -187,16 +187,16 @@ Route work by `state.yaml.phase`:
   Use `reviewer`when handbook quality or omission risk is material.
 - `phase4`
   Main agent stays in orchestration mode.
-  Load `phases/phase4.md` and invoke `agents/architect.md` as the primary design worker.
+  Load `phases/phase4.md` and Use subagent `architect.md` as the primary design worker.
   Convert requirements, architecture, and handbook constraints into `design/interconnect.json` and supporting notes.
-  `agents/reviewer.md` is a required approval-gate role in this phase and must independently attack the final design before approval.
+  Use subagent `reviewer` is a required approval-gate role in this phase and must independently attack the final design before approval.
 - `phase5`
   Main agent stays in orchestration mode.
   Load `phases/phase5.md` and invoke the appropriate design-preparation role before calling `scripts/render.py`.
   Verify render inputs and log outputs.
-  Use `reviewer` to judge render readiness and output traceability before approval when needed.
+  Use subagent `reviewer` to judge render readiness and output traceability before approval when needed.
 
-Use `reviewer` as the system's approval-gate reviewer whenever a phase deliverable needs semantic signoff.
+UUse subagent `reviewer` as the system's approval-gate reviewer whenever a phase deliverable needs semantic signoff.
 
 ## Task Allocation
 
