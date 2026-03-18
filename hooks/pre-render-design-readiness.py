@@ -33,6 +33,17 @@ def main() -> int:
     if not isinstance(payload, dict) or not payload:
         print("Render input JSON must be a non-empty object.")
         return 1
+
+    for key in ["modules", "nets", "components", "constraints", "evidence"]:
+        value = payload.get(key)
+        if not isinstance(value, list) or not value:
+            print(f"Render readiness blocked: '{key}' must be a non-empty array.")
+            return 1
+
+    unresolved = payload.get("unresolved_items", [])
+    if isinstance(unresolved, list) and len(unresolved) > 10:
+        print("Render readiness blocked: too many unresolved_items remain for a trustworthy render.")
+        return 1
     return 0
 
 

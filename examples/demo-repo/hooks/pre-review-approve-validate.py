@@ -6,9 +6,28 @@ import subprocess
 import sys
 from pathlib import Path
 
+import yaml
+
 
 VALID_DECISION = "ready to approve"
 BLOCKING_DECISIONS = {"needs revision", "blocked by unresolved issue"}
+
+
+def has_datasheet_evidence(project_root: Path) -> bool:
+    datasheet_dir = project_root / "sourcing" / "datasheets"
+    if datasheet_dir.exists() and any(path.is_file() and path.suffix.lower() == ".pdf" for path in datasheet_dir.iterdir()):
+        return True
+
+    approved_parts_path = project_root / "sourcing" / "approved_parts.yaml"
+    if not approved_parts_path.exists():
+        return False
+
+    payload = yaml.safe_load(approved_parts_path.read_text(encoding="utf-8-sig")) or {}
+    approved_parts = payload.get("approved_parts", []) if isinstance(payload, dict) else []
+    for item in approved_parts:
+        if isinstance(item, dict) and item.get("datasheets"):
+            return True
+    return False
 
 
 def main() -> int:
@@ -45,6 +64,10 @@ def main() -> int:
         return 1
     if VALID_DECISION not in lowered:
         print("Review approval blocked: review decision must explicitly say 'Ready to approve'.")
+        return 1
+
+    if phase in {"phase2", "phase3"} and not has_datasheet_evidence(project_root):
+        print("Review approval blocked: phase2/phase3 require real datasheet evidence or explicit datasheet links in approved parts.")
         return 1
     return 0
 

@@ -104,6 +104,13 @@ Keep the datasheets that later phases actually need.
 
 Phase2 should not leave behind a noisy pile of irrelevant PDFs. Preserve evidence with intent.
 
+Approval in phase2 requires **real datasheet evidence**:
+
+1. at least one relevant PDF in `sourcing/datasheets/`, or
+2. explicit datasheet references recorded per approved part in `sourcing/approved_parts.yaml`
+
+If neither exists, the phase is not approval-ready.
+
 ## Review Requirement
 
 Before approval, reviewer involvement should challenge:

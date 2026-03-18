@@ -112,6 +112,8 @@ Phase3 may start when:
 3. The main agent has loaded `SKILL.md`, this phase rule, and the selected worker role
 4. Relevant datasheets are present
 
+If real datasheet evidence is missing, phase3 should stay blocked or explicitly remain provisional instead of pretending the handbook is fully datasheet-backed.
+
 ## Exit Criteria
 
 Phase3 is ready for review only when:

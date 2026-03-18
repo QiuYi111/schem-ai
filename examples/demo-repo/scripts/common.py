@@ -167,7 +167,7 @@ def run_hook_group(project_root: Path, hook_group: str, extra_env: dict[str, str
         if not stem.startswith(f"{hook_group}-"):
             return False
         for other in known_groups:
-            if other != hook_group and other.startswith(f"{hook_group}-") and stem.startswith(other):
+            if other not in {hook_group, stem} and other.startswith(f"{hook_group}-") and stem.startswith(other):
                 return False
         return True
 
