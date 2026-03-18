@@ -13,14 +13,19 @@ from common import PACKAGE_ROOT, default_index, default_state, write_data
 TEMPLATE_ROOT = PACKAGE_ROOT / "examples" / "minimal-repo"
 COPY_ROOT_FILES = [".gitignore", "Makefile", "SKILL.md"]
 COPY_DIRS = ["hooks", "phases", "schemas"]
-SKIP_NAMES = {"__pycache__", ".git"}
+SKIP_NAMES = {"__pycache__", ".git", ".DS_Store"}
+SKIP_PREFIXES = {"._"}
 SKIP_SUFFIXES = {".pyc", ".pyo", ".pyd"}
 
 
 def copy_tree(src: Path, dst: Path) -> None:
     dst.mkdir(parents=True, exist_ok=True)
     for item in src.iterdir():
-        if item.name in SKIP_NAMES or item.suffix.lower() in SKIP_SUFFIXES:
+        if (
+            item.name in SKIP_NAMES
+            or any(item.name.startswith(prefix) for prefix in SKIP_PREFIXES)
+            or item.suffix.lower() in SKIP_SUFFIXES
+        ):
             continue
         target = dst / item.name
         if item.is_dir():

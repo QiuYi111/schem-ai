@@ -23,9 +23,22 @@ from common import (
 )
 
 
-def missing_paths(project_root: Path) -> list[str]:
+PHASE_DIR_REQUIREMENTS = {
+    "phase0": [],
+    "phase1": [],
+    "phase2": ["sourcing/datasheets"],
+    "phase3": ["sourcing/datasheets"],
+    "phase4": ["sourcing/datasheets"],
+    "phase5": ["sourcing/datasheets"],
+}
+
+
+def missing_paths(project_root: Path, phase: str) -> list[str]:
     missing = []
     for item in REQUIRED_DIRS:
+        if not (project_root / item).exists():
+            missing.append(item + "/")
+    for item in PHASE_DIR_REQUIREMENTS.get(phase, []):
         if not (project_root / item).exists():
             missing.append(item + "/")
     for item in REQUIRED_FILES + PHASE_DOCS + AGENT_DOCS + SCHEMA_FILES:
@@ -64,11 +77,12 @@ def main() -> int:
     project_root = resolve_project_root(args.project_root)
     failures: list[str] = []
 
-    for path in missing_paths(project_root):
-        failures.append(f"Missing required path: {path}")
-
     state = read_state(project_root)
     index = read_index(project_root)
+    phase = state.get("phase", "phase0")
+
+    for path in missing_paths(project_root, phase):
+        failures.append(f"Missing required path: {path}")
 
     if not failures:
         validate_schema(failures, state, load_schema(project_root, "state.schema.json"), "state.yaml")
@@ -92,7 +106,6 @@ def main() -> int:
                 "design/interconnect.json",
             )
 
-    phase = state.get("phase", "phase0")
     if phase not in PHASES:
         failures.append(f"Unknown phase in state.yaml: {phase}")
     else:
@@ -113,24 +126,22 @@ def main() -> int:
     phase_idx = PHASES.index(phase) if phase in PHASES else -1
     phase2_idx = PHASES.index("phase2")
     
-    approved_parts = index.get("approved_parts", {}) # Usually in index or separate file
-    # Check if we have approved parts in the sourcing artifact
     approved_parts_file = project_root / "sourcing" / "approved_parts.yaml"
-    
+
     if phase_idx >= phase2_idx:
         has_approved_parts = False
         if approved_parts_file.exists():
             parts_data = read_data(approved_parts_file)
-            if parts_data and isinstance(parts_data, dict) and parts_data.get("parts"):
-                has_approved_parts = True
-        
+            approved_parts = parts_data.get("approved_parts", []) if isinstance(parts_data, dict) else []
+            has_approved_parts = isinstance(approved_parts, list) and len(approved_parts) > 0
+
         if has_approved_parts:
             datasheet_dir = project_root / "sourcing" / "datasheets"
             datasheets = index.get("datasheets", [])
-            
+
             if not datasheets and not (datasheet_dir.exists() and any(datasheet_dir.iterdir())):
                 failures.append("Datasheet gating failure: Approved parts exist but no datasheets found in sourcing/datasheets/ or project index.")
-            
+
             # Check for empty datasheets
             if datasheet_dir.exists():
                 for ds in datasheet_dir.glob("*.pdf"):

@@ -1,6 +1,6 @@
 ---
 name: schematic
-description: Orchestrate the end-to-end schematic-agent workflow for initialized project repositories. Use when Codex needs to run or continue the phase-based process defined by this repository: read workflow state, load the active phase rule, pick the right agent role, create or update phase artifacts, invoke deterministic scripts, run review and checkpoint gates, and advance the project through phase0 to phase5 without replacing script-owned validation or state transitions.
+description: Run the Schem-AI phase-based hardware design workflow for initialized project repos. Use when a user wants to create or continue a schematic-design project with phase0 to phase5 artifacts, role routing, review gates, validation, transitions, and rendering.
 ---
 # Schematic
 

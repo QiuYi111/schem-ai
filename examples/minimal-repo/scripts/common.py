@@ -16,7 +16,6 @@ REQUIRED_DIRS = [
     "spec",
     "architecture",
     "sourcing",
-    "sourcing/datasheets",
     "handbook",
     "design",
     "render",
@@ -158,7 +157,21 @@ def run_hook_group(project_root: Path, hook_group: str, extra_env: dict[str, str
     if not hook_root.exists():
         return 0
 
-    hook_files = sorted(path for path in hook_root.iterdir() if path.is_file() and path.name.startswith(hook_group))
+    files = [path for path in hook_root.iterdir() if path.is_file()]
+    known_groups = sorted({path.stem for path in files}, key=len, reverse=True)
+
+    def belongs_to_group(path: Path) -> bool:
+        stem = path.stem
+        if stem == hook_group:
+            return True
+        if not stem.startswith(f"{hook_group}-"):
+            return False
+        for other in known_groups:
+            if other != hook_group and other.startswith(f"{hook_group}-") and stem.startswith(other):
+                return False
+        return True
+
+    hook_files = sorted(path for path in files if belongs_to_group(path))
     if not hook_files:
         return 0
 
